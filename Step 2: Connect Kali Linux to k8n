@@ -1,0 +1,51 @@
+Được rồi, quyết định rất chính xác\! Cách mở port trực tiếp (Port Forwarding) sẽ giúp bạn hiểu rõ hơn về cách Kubernetes giao tiếp với mạng bên ngoài.
+
+Để máy Kali (ở ngoài mạng) truy cập được vào máy Ubuntu (đang chạy Lab), bạn hãy làm theo 3 bước chuẩn kỹ thuật dưới đây.
+
+### Bước 1: Dừng các tiến trình cũ (Quan trọng)
+
+Trước tiên, bạn cần đảm bảo không có lệnh nào đang chiếm dụng cổng 1234.
+
+  * Quay lại Terminal trên máy Ubuntu đang chạy lệnh `access-kubernetes-goat.sh`.
+  * Nhấn **`Ctrl + C`** để tắt nó đi.
+
+### Bước 2: Chạy lệnh "Mở Cổng Ra Mạng LAN"
+
+Đây là lệnh quan trọng nhất. Thay vì chỉ mở cho `localhost` (127.0.0.1) như mặc định, chúng ta sẽ thêm tham số `--address 0.0.0.0` để lắng nghe mọi kết nối từ bên ngoài.
+
+Mở Terminal Ubuntu và chạy lệnh:
+
+```bash
+kubectl port-forward --address 0.0.0.0 service/kubernetes-goat-home 1234:80
+```
+
+  * **Giải thích:** Lệnh này tạo một "cánh cổng" ngay tại cổng **1234** của máy Ubuntu, nối thẳng vào cổng **80** của service `kubernetes-goat-home` bên trong Minikube.
+  * **Dấu hiệu thành công:** Nó sẽ hiện dòng chữ: `Forwarding from 0.0.0.0:1234 -> 80`.
+  * **Lưu ý:** Bạn **phải giữ nguyên cửa sổ Terminal này**, đừng tắt nó (vì tắt là mất kết nối).
+
+### Bước 3: Mở tường lửa (Firewall) trên Ubuntu
+
+Nhiều trường hợp bạn đã mở port nhưng Kali vẫn không vào được là do Ubuntu chặn. Hãy mở cổng 1234:
+
+```bash
+# Mở tab Terminal mới trên Ubuntu và chạy:
+sudo ufw allow 1234/tcp
+```
+
+*(Nếu bạn lười hoặc chỉ đang test lab, có thể tắt tạm tường lửa bằng lệnh: `sudo ufw disable`)*.
+
+### Bước 4: Tấn công từ máy Kali
+
+Bây giờ mọi thứ đã sẵn sàng.
+
+1.  **Kiểm tra IP máy Ubuntu:**
+
+      * Trên Ubuntu gõ: `ip a`
+      * Tìm địa chỉ IP LAN (thường bắt đầu bằng `192.168.x.x` hoặc `10.x.x.x`). Ví dụ: `192.168.1.105`.
+
+2.  **Truy cập từ Kali:**
+
+      * Mở trình duyệt trên Kali.
+      * Nhập địa chỉ: `http://192.168.1.105:1234` (Thay `192.168.1.105` bằng IP máy Ubuntu của bạn).
+
+Nếu thấy giao diện **Kubernetes Goat** hiện ra trên Kali, chúc mừng bạn đã "thông đường" thành công\! Giờ bạn có thể thoải mái dùng Burp Suite hay Nmap từ Kali để bắn phá sang rồi đó.
